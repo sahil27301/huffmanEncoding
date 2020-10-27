@@ -1,5 +1,9 @@
+from tkinter.filedialog import askopenfilename
+
 # To print tables
 from tabulate import tabulate
+
+import os
 
 # Recursive function to get height of a node, height of leaves is 0
 def height(node):
@@ -93,7 +97,17 @@ class Node():
         return '\n' + '\n'.join((line.rstrip() for line in lines))
 
 
-string = input("Enter the string: ")
+# string = input("Enter the string: ")
+
+file_to_compress = askopenfilename()
+# print(filename)
+filename, file_extension = os.path.splitext(file_to_compress)
+output_path = filename + ".bin"
+
+with open(filename+'.txt', 'r+') as file:
+    string = file.read()
+    string = string.rstrip()
+
 
 # Dictionary to map the frequency of each character
 dictionary = {}
@@ -234,10 +248,41 @@ print ('The encoded string is: ')
 print()
 
 # Encoding the string using the dictionary
+compressed_binary = ''
 for letter in string:
     print(encodedDictionary[letter], end='')
+    compressed_binary += encodedDictionary[letter]
 
 print('\n')
 
 # Displaying the compression ratio
 print(f'The compression ratio is {round(initial_size/final_size, 3)}')
+
+def pad_string(string):
+    extra_padding = 8 - len(string) % 8
+    for i in range(extra_padding):
+        string += "0"
+
+    padded_info = "{0:08b}".format(extra_padding)
+    string = padded_info + string
+    return string
+
+def get_byte_array(string):
+    b = bytearray()
+    for i in range(0, len(string), 8):
+        byte = string[i:i+8]
+        b.append(int(byte, 2))
+    return b
+
+with open(filename+'_compressed.bin', 'wb+') as output:
+    padded_string = pad_string(compressed_binary)
+    byte_array = get_byte_array(padded_string)
+    output.write(bytes(byte_array))
+
+
+reversedDictionary = {}
+for key, value in encodedDictionary.items():
+    reversedDictionary[value] = key
+with open(filename+'_compressed_dictionary.txt', 'w') as file:
+    print(reversedDictionary, file=file)
+
