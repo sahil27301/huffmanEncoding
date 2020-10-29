@@ -8,13 +8,6 @@ file_to_decompress = askopenfilename()
 filename, file_extension = os.path.splitext(file_to_decompress)
 
 
-with open(filename+'_dictionary.txt') as f: 
-    data = f.read() 
-# data = ",\n".join(data.split(', '))
-data = data.replace('\'', '"').replace('"""', '"\'""')
-data = json.loads(data)
-
-
 def remove_padding(padded_encoded_text):
 
     padded_info = padded_encoded_text[:8]
@@ -26,7 +19,7 @@ def remove_padding(padded_encoded_text):
     return encoded_text
 
 
-def decode_text(encoded_text):
+def decode_text(encoded_text, data):
     current_code = ""
     decoded_text = ""
 
@@ -39,7 +32,22 @@ def decode_text(encoded_text):
 
     return decoded_text
 
-# newfile = filename.replace("_compressed", "")
+def get_dictionary(bit_string):
+    dict_length = int(bit_string[:32], 2)
+    bit_string = bit_string[32:]
+    dictionary = bit_string[:dict_length]
+    bit_string = bit_string[dict_length:]
+
+    dictionary_string = ''
+
+    for i in range(0, len(dictionary), 8):
+        dictionary_string += chr(int(dictionary[i:i+8],2))
+    # print(dictionary_string)
+    dictionary = eval(dictionary_string)
+
+    return dictionary, bit_string
+
+
 filename = filename[:filename.rfind("_compressed")]
 with open(filename+'_compressed.bin', 'rb') as file, open(filename+'_decompressed.txt', 'w') as output:
     bit_string = ""
@@ -51,8 +59,9 @@ with open(filename+'_compressed.bin', 'rb') as file, open(filename+'_decompresse
         bit_string += bits
         byte = file.read(1)
     # print(bit_string)
+    dictionary, bit_string = get_dictionary(bit_string)
     encoded_text = remove_padding(bit_string)
 
-    decompressed_text = decode_text(encoded_text)
+    decompressed_text = decode_text(encoded_text, dictionary)
     
     output.write(decompressed_text)

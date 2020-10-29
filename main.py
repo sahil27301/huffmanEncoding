@@ -241,16 +241,16 @@ print()
 
 print(f'Final size = {final_size} bits.')
 
-print()
+# print()
 
-print ('The encoded string is: ')
+# print ('The encoded string is: ')
 
 print()
 
 # Encoding the string using the dictionary
 compressed_binary = ''
 for letter in string:
-    print(encodedDictionary[letter], end='')
+    # print(encodedDictionary[letter], end='')
     compressed_binary += encodedDictionary[letter]
 
 print('\n')
@@ -273,16 +273,25 @@ def get_byte_array(string):
         byte = string[i:i+8]
         b.append(int(byte, 2))
     return b
-
+reversedDictionary = {}
+for key, value in encodedDictionary.items():
+    reversedDictionary[value] = key
 with open(filename+'_compressed.bin', 'wb+') as output:
+
     padded_string = pad_string(compressed_binary)
+
+    binary_dictionary = ''.join('{0:08b}'.format(ord(x), 'b') for x in str(reversedDictionary))
+    length_of_dictionary = "{0:032b}".format(len(binary_dictionary))
+    binary_dictionary = length_of_dictionary + binary_dictionary
+    padded_string = binary_dictionary + padded_string
+
     byte_array = get_byte_array(padded_string)
     output.write(bytes(byte_array))
 
 
-reversedDictionary = {}
-for key, value in encodedDictionary.items():
-    reversedDictionary[value] = key
-with open(filename+'_compressed_dictionary.txt', 'w') as file:
-    print(reversedDictionary, file=file)
 
+
+'''
+len(dict) + padding(dict) + dict + dict_padding + len(padding) + string + padding
+' '.join('{0:08b}'.format(ord(x), 'b') for x in st)
+'''
