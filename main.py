@@ -1,3 +1,4 @@
+# A GUI to accept file input
 from tkinter.filedialog import askopenfilename
 
 # To print tables
@@ -39,10 +40,8 @@ def _build_tree_string(root, curr_index):
     new_root_width = gap_size = len(node_repr)
 
     # Get the left and right sub-boxes, their widths, and root repr positions
-    l_box, l_box_width, l_root_start, l_root_end = \
-        _build_tree_string(root.left, 2 * curr_index + 1)
-    r_box, r_box_width, r_root_start, r_root_end = \
-        _build_tree_string(root.right, 2 * curr_index + 2)
+    l_box, l_box_width, l_root_start, l_root_end = _build_tree_string(root.left, 2 * curr_index + 1)
+    r_box, r_box_width, r_root_start, r_root_end = _build_tree_string(root.right, 2 * curr_index + 2)
 
 
     # Draw the branch connecting the current root node to the left sub-box
@@ -99,12 +98,14 @@ class Node():
 
 # string = input("Enter the string: ")
 
+printing = input("Enter yes to print the tree and encoded message, no otherwise: ").lower() == 'yes'
 file_to_compress = askopenfilename()
+
 # print(filename)
 filename, file_extension = os.path.splitext(file_to_compress)
 output_path = filename + ".bin"
 
-with open(filename+'.txt', 'r+') as file:
+with open(filename + file_extension, 'r+') as file:
     string = file.read()
     string = string.rstrip()
 
@@ -165,7 +166,8 @@ while len(arrayOfNodes) > 1:
     arrayOfNodes.append(newNode)
 
     # Display the newly created node
-    print(newNode)
+    if printing:
+        print(newNode)
 
     # Now, we need to sort the array again, since the newNode needs to be adjusted
     # First, we will sort omn the basis of the node value (frequency)
@@ -241,16 +243,21 @@ print()
 
 print(f'Final size = {final_size} bits.')
 
-# print()
+if printing:
+    print()
 
-# print ('The encoded string is: ')
+    print ('The encoded string is: ')
 
 print()
 
 # Encoding the string using the dictionary
 compressed_binary = ''
+
 for letter in string:
-    # print(encodedDictionary[letter], end='')
+
+    if printing:
+        print(encodedDictionary[letter], end='')
+
     compressed_binary += encodedDictionary[letter]
 
 print('\n')
@@ -259,33 +266,57 @@ print('\n')
 print(f'The compression ratio is {round(initial_size/final_size, 3)}')
 
 def pad_string(string):
+    #We need to round off the message to 8 bits
     extra_padding = 8 - len(string) % 8
+
+    # Pad it up to a multiple of 8 with '0's
     for i in range(extra_padding):
         string += "0"
 
+    # Keep track of the padding length so it can be removed during decoding
     padded_info = "{0:08b}".format(extra_padding)
+
+    #Store the length at the start
     string = padded_info + string
+
     return string
 
 def get_byte_array(string):
+
+    # b is an array of bytes, where we will store the string
     b = bytearray()
     for i in range(0, len(string), 8):
+
         byte = string[i:i+8]
+
+        # We will convert 8 bits at a time to their decimal value and add it to b
         b.append(int(byte, 2))
+
     return b
+
+# Creating a dictionary to get the letter from the code
 reversedDictionary = {}
+
 for key, value in encodedDictionary.items():
     reversedDictionary[value] = key
+
+# Writing the string into the binary file
 with open(filename+'_compressed.bin', 'wb+') as output:
 
     padded_string = pad_string(compressed_binary)
 
+    # Convert the reverseDictionary to binary, with 8 bits for each char
     binary_dictionary = ''.join('{0:08b}'.format(ord(x), 'b') for x in str(reversedDictionary))
+    # Get the length of this new binary dictionary, and convert it to 32 bit binary
     length_of_dictionary = "{0:032b}".format(len(binary_dictionary))
+    # Add the length to the start of the dictionary
     binary_dictionary = length_of_dictionary + binary_dictionary
+    # Add the dictionary to the start of the message
     padded_string = binary_dictionary + padded_string
 
+    # Convert this entire string to bytes
     byte_array = get_byte_array(padded_string)
+    # Print it in the new file
     output.write(bytes(byte_array))
 
 
